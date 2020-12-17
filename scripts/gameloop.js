@@ -1,33 +1,83 @@
-import { Main } from './main/main.js';
+import { main } from './main/main.js';
 import { Render } from './main/render.js';
 import { UserInput } from './main/userInput.js';
 
 
-import { Render as GameRenderer } from './game/render/gameRender.js'
+import { GameRender } from './game/render/gameRender.js';
 import { DebugRender } from './game/render/debugRender.js';
 import { KeyboardInput } from './game/input/keyboardInput.js';
-import { GameWorld } from './game/gameWorld.js';
 
 const update = new Worker('./scripts/main/update.js', {type: 'module'});
-
-const noop = function(){};
-
 const userInput = new UserInput(new KeyboardInput);
-const render = new Render(new GameRenderer, new DebugRender);
-const gameLoop = new Main(GameWorld, userInput, update, render, noop, noop); 
+const render = new Render({
+    gameWorld: new GameRender,
+    debug: new DebugRender
+});
 
-gameLoop.init();
+main.init(userInput, update, render);
 
+// 4 per row
+// 3 rows -- arr.length / 4
 
 /*
-    Things to keep track of
-        * Game world
-            * 2d array
-        * Components
-            * Players
-            * Enemies
-        * Game world state
-            * Timers
-            * Scores
-            * Etc
+    newX = y
+    newY = 
 */
+
+/*
+01 02 03 04
+05 06 07 08
+09 10 11 12
+13 14 15 16
+
+CC
+04 08 12 16
+03 07 11 15
+02 06 10 14
+01 05 09 13
+
+C
+13 09 05 01
+14 10 06 02
+15 11 07 03
+16 12 08 04
+
+12 + y - (x + 4)
+*/
+
+var arr = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+
+var rotateClockWise = arr => {
+    var rotated = [];
+
+    for (var y = 0; y < 4; y++) {
+        for (var x = 0; x < arr.length / 4; x++) {
+            var index = arr[(y * 4) + x];
+
+            rotated[3 - y + (x * 4)] = index;
+        }
+    }
+
+    return rotated;
+};
+
+
+
+var rotateCounterClockwise = arr => {
+    var rotated = [];
+
+    for (var y = 0; y < 4; y++) {
+        for (var x = 0; x < arr.length / 4; x++) {
+            var index = arr[(y * 4) + x];
+
+            rotated[y + ((3 - x) * 4)] = index;
+        }
+    }
+
+    return rotated;
+};
+
+
+
+console.log(rotateClockWise(rotateClockWise(arr)));
+console.log(rotateCounterClockwise(rotateCounterClockwise(arr)));

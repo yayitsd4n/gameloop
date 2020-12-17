@@ -1,16 +1,12 @@
-class Render {
-    constructor(gameWorld) {
-        this.gameWorld = gameWorld;
+class GameRender {
+    constructor() {
+        this.gameWorld = null;
         this.running = false;
         this.canvas = document.querySelector('#game');
     }
 
-    update(gameWorld) {
-        this.gameWorld = gameWorld;
-    }
-
-    execute() {
-        this.running = window.requestAnimationFrame(this.execute.bind(this));
+    start() {
+        //this.running = window.requestAnimationFrame(this.execute.bind(this));;
     }
 
     stop() {
@@ -18,9 +14,20 @@ class Render {
         this.running = false;
     }
 
-    start() {
-        this.running = window.requestAnimationFrame(this.execute.bind(this));;
+    update(renderData) {
+        //this.gameWorld = renderData.gameWorld;
+    }
+
+    execute() {
+        // Only render if update has sent new frames
+        if (this.gameWorld == null) return;
+        
+        /*
+            Render the game
+        */
+
+        this.gameWorld = null;
     }
 };
 
-export { Render };
+export { GameRender };

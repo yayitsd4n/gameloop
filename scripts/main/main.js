@@ -1,8 +1,42 @@
 const noop = function(){};
 
-class Main {
-    constructor(gameWorld = noop, userInput = noop, update = noop, render = noop, begin = noop, end = noop) {
-        this.gameWorld = gameWorld;
+var messages = {
+    initalized() {
+        this.update.postMessage(['run']);
+        this.running = true;
+        this.run();
+    },
+    updateFrameEnd(data) {
+        //this.render.update(data);
+        
+        // Get new user inputs
+        var inputs = this.userInput.getInputEvents();
+        if (inputs.length) {
+            this.update.postMessage(['updateUserInput', inputs]);
+        }
+    }
+};
+
+const main = {
+    init(userInput = noop, update = noop, render = noop, begin = noop, end = noop) {
+        this.setComponents(userInput, update, render, begin, end);
+        // Start listening for user input
+        this.userInput.init();
+        // Start the worker
+        this.update.postMessage(['init']);
+        
+        // Process messages from update function
+        this.update.onmessage = e => {
+            var message = e.data[0];
+            var data = e.data[1];
+
+            if (message in messages) {
+                messages[message].call(this, data);
+            }
+        }
+    },
+
+    setComponents(userInput, update, render, begin, end) {
         this.userInput = userInput;
         this.update = update;
         this.render = render;
@@ -10,44 +44,11 @@ class Main {
         this.end = end;
 
         this.running = false;
-    }
-
-    init() {
-        // Start listening for user input
-        this.userInput.init();
-        // Start the worker
-        this.update.postMessage(['init', this.gameWorld]);
-        this.update.onmessage = e => {
-            var event = e.data[0];
-            var data = e.data[1];
- 
-            if (event == 'initalized') {
-                this.update.postMessage(['run']);
-                this.run();
-            }
-
-            if (event == 'updateFrameEnd') {
-                this.gameWorld = data;
-
-                // Get new user inputs
-                var inputs = this.userInput.getInputEvents()
-                if (inputs.length) {
-                    this.update.postMessage(['updateUserInput', inputs]);
-                }
-            }
-        }
-    }
+    },
 
     run() {
-        if (! this.render.running) {
-            this.render.start();
-        }
-    }
-
-    stop() {
-        this.render.stop();
-        this.update.postMessage(['stop']);
-    }
+        this.render.start();
+    },
 };
 
-export { Main };
+export { main };

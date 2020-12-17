@@ -1,16 +1,12 @@
 class DebugRender {
     constructor() {
-        this.debugData;
+        this.renderData = null;
         this.running = false;
         this.canvas = document.querySelector('#debug');
     }
 
-    update(debugData) {
-        this.debugData = debugData;
-    }
-
-    execute() {
-        this.running = window.requestAnimationFrame(this.execute.bind(this));
+    start() {
+        this.running = window.requestAnimationFrame(this.execute.bind(this));;
     }
 
     stop() {
@@ -18,8 +14,13 @@ class DebugRender {
         this.running = false;
     }
 
-    start() {
-        this.running = window.requestAnimationFrame(this.execute.bind(this));;
+    update(renderData) {
+        this.renderData = renderData;
+    }
+
+    execute() {
+        
+        this.running = window.requestAnimationFrame(this.execute.bind(this));
     }
 }
 

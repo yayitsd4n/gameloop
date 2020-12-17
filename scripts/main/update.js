@@ -1,20 +1,33 @@
 import { update as updateExt } from '../game/update/update.js';
 import { updateMessages as updateMessagesExt } from '../game/update/updateMessages.js';
 
+class debug {
+    constructor() {
+        this.misc = []
+    }
+    add(section = 'misc', data) {
+        if ((section in this) == false) {
+            this[section] = [];
+        }
+
+        this[section].push(data);
+    }
+}
+
 var updateMessages = {
-    init(data) {
-        this.init(data);
+    init() {
+        this.init();
         postMessage(['initalized']);
+    },
+    updateUserInput(data) {
+
     },
     run() {
         this.run();
-    },
-    stop() {
-        this.stop();
     }
 };
-updateMessages = Object.assign(updateMessages, updateMessagesExt);
 
+if (updateMessagesExt) updateMessages = Object.assign(updateMessages, updateMessagesExt);
 
 onmessage = e => {
     var message = e.data[0];
@@ -25,20 +38,22 @@ onmessage = e => {
     }
 };
 
-var update = {
-    gameWorld: null,
 
-    currentTimeMS: null,
-    lastTimeMS: null,
-    elapsedMS: null,
-    lag: 0,
-    ticksPerSecond: 1000/120
+var update = {
+    stores: {},
+    time: {
+        currentTimeMS: null,
+        lastTimeMS: null,
+        elapsedMS: null,
+        lag: 0,
+        ticksPerSecond: 1000 / 120
+    },
+    context: null,
+    historyPosition: 0
 };
 
 var updateProto = {
-    init(gameWorld) {
-        this.gameWorld = gameWorld;
-
+    init() {
         // Call shadowed init methods. Works, but feels like a hack.
         var proto = Object.getPrototypeOf(updateProto);
         while (proto) {
@@ -49,30 +64,95 @@ var updateProto = {
             proto = Object.getPrototypeOf(proto);
         }
 
-        this.lastTimeMS = performance.now();
+        this.time.lastTimeMS = performance.now();
     },
 
     run() {
-        this.running = true;
+        this.updateLoop = setInterval(() => {
+            this.time.currentTimeMS = performance.now();
+            this.time.elapsedMS = this.time.currentTimeMS - this.time.lastTimeMS;
+            this.time.lastTimeMS = this.time.currentTimeMS;
 
-        this.updateLoop = setInterval(()=> {
-            this.currentTimeMS = performance.now();
-            this.elapsedMS = this.currentTimeMS - this.lastTimeMS;
-            this.lastTimeMS = this.currentTimeMS;
-            this.lag += this.elapsedMS;
+            if (this.context == 'game') {
 
-            while (this.lag >= this.ticksPerSecond) {
-                this.update(this.ticksPerSecond);
-                this.lag -= this.ticksPerSecond;
-                postMessage(['updateFrameEnd', this.gameWorld]);
+                if (this.historyPosition == 0) {
+                    this.simulateGameFrame();
+
+                } else if (this.historyPosition > 0) {
+
+                    for (var prop in this.time) {
+                        if (prop != 'ticksPerSecond') {
+                            this.time[prop] = 0;
+                        }
+                    }
+
+                    this.time.lag += this.time.ticksPerSecond * this.historyPosition;
+                    this.simulateGameFrame();
+
+                    this.historyPosition = 0;
+                    this.pause();
+
+                } else if (this.historyPosition < 0) {
+                    postMessage(['updateFrameEnd', updateHistory[updateHistory.length + this.historyPosition]]);
+                    this.pause();
+
+                }
+            } else if (this.context == 'debug') {
+                this.simulateDebug();
             }
         });
     },
 
-    stop() {
-        clearInterval(this.updateLoop);
+    simulateDebugframe() {
+        this.time.lag += this.time.elapsedMS;
+
+        while (this.time.lag >= this.time.ticksPerSecond) {
+            this.update(this.time.ticksPerSecond);
+            this.time.lag -= this.time.ticksPerSecond;
+
+            postMessage(['updateFrameEnd', {debug: this.stores.debug}]);
+        }
+    },
+
+    simulateGameFrame() {
+        this.time.lag += this.time.elapsedMS;
+
+        while (this.time.lag >= this.time.ticksPerSecond) {
+            this.stores.debug = new debug();
+
+            this.update(this.time.ticksPerSecond);
+            this.time.lag -= this.time.ticksPerSecond;
+
+            updateHistory.push(JSON.parse(JSON.stringify(this.stores)));
+            postMessage(['updateFrameEnd', this.stores]);
+        }
+    },
+
+    pause() {
+        this.context = 'debug';
+    },
+
+    play() {
+        if (this.historyPosition != 0) {
+            updateHistory = updateHistory.slice(0, updateHistory.length - this.historyPosition);
+            this.historyPosition = 0;
+        }
+        
+        this.context = 'game';
+    },
+
+    backward(frames) {
+        this.historyPosition -= frames;
+        this.context = 'game';
+    },
+
+    forward(frames) {
+        this.historyPosition += frames;
+        this.context = 'game';
     }
 };
 
-Object.setPrototypeOf(updateProto, updateExt);
+var updateHistory = [];
+
+if (updateExt) Object.setPrototypeOf(updateProto, updateExt);
 Object.setPrototypeOf(update, updateProto);

@@ -10,11 +10,9 @@ class UserInput {
     }
 
     getInputEvents() {
-        var test = this.inputs.reduce((a, b) => {
+        return this.inputs.reduce((a, b) => {
             return a.concat(b.getInputEvents());
         }, []);
-
-        return test;
     }
 }
 
