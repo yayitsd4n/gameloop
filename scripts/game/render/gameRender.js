@@ -1,6 +1,6 @@
 class GameRender {
     constructor() {
-        this.gameWorld = null;
+        this.gameWorld = [];
         this.running = false;
         this.canvas = document.querySelector('#game');
     }

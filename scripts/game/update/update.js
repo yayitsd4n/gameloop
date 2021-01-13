@@ -1,49 +1,40 @@
 import { GameWorld } from './stores/gameWorld.js';
+import { entities } from '../../shared/entities/entities.js';
 
-import { PlayerInputHandler } from './input/playerInputHandler.js';
-import { keyBindings } from './input/keyBindings.js';
-import { commands } from './commands.js';
-import { Player } from './entities/Player.js';
+/*
+    * entity.add creates a restore property that points to it's 'class'
+    * each entity has a restore function that takes state and returns a new 'class'
+    
+
+    // Entities returns an object of all entities: {name: entity} 
+    import { entities } from './entities/entities.js';
+
+    function entityFactory(name, options) {
+        var entity = new entities[name](options);
+        entity.restore = name;
+
+        return entity;
+    }
+*/
 
 var update = {
     init() {
         this.stores.gameWorld = GameWorld;
-        this.context = 'game';
-        this.gameContext = 'game';
-
-        
-        this.playerInput = new PlayerInputHandler(keyBindings, commands);
-        this.stores.gameWorld.addEntity(Player(this.playerInput));
+        //this.stores.gameWorld.addEntity(Player(this.playerInput));
     },
 
-    update(ticksPerSecond) {
-        switch (this.context) {
-            case 'game':
-                var frameStartMs = performance.now();
+    update() {
+        var frameStartMs = performance.now();
 
-
-                /*
-                    * Pull input
-                    * gameContext is used in gameWorld
-                    * If gameWorld doens't use the input, let the input bubble up to
-                      the main update. Main update will (probably) be configured to 
-                      switch between debug and game contexts where these inputs could
-                      do things.
-                */
-
-                this.stores.gameWorld.update(ticksPerSecond);
-
-
-
-                this.stores.debug.add('Time', {
-                    type: 'keyValue',
-                    data: {
-                        key: 'Update Time MS',
-                        value: performance.now() - frameStartMs
-                    }
-                });
-            break;
-        }
+        this.stores.gameWorld.update(this);
+        
+        this.stores.debug.add('Time', {
+            type: 'keyValue',
+            data: {
+                key: 'Update Time MS',
+                value: performance.now() - frameStartMs
+            }
+        });
         
     }
 };

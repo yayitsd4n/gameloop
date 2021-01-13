@@ -1,27 +1,12 @@
-class DebugRender {
-    constructor() {
-        this.renderData = null;
-        this.running = false;
-        this.canvas = document.querySelector('#debug');
-    }
+var debugRender = {
+    data: []
+};
 
-    start() {
-        this.running = window.requestAnimationFrame(this.execute.bind(this));;
-    }
-
-    stop() {
-        window.cancelAnimationFrame(this.running);
-        this.running = false;
-    }
-
-    update(renderData) {
-        this.renderData = renderData;
-    }
-
-    execute() {
+var debugFns = {
+    update() {
         
-        this.running = window.requestAnimationFrame(this.execute.bind(this));
     }
-}
+};
 
-export { DebugRender }
+Object.setPrototypeOf(debugRender, debugFns);
+export { debugRender }

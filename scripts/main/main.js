@@ -1,3 +1,6 @@
+import { entities } from '../shared/entities/entities.js';
+import { debug } from '../shared/debug.js';
+
 const noop = function(){};
 
 var messages = {
@@ -7,7 +10,22 @@ var messages = {
         this.run();
     },
     updateFrameEnd(data) {
-        //this.render.update(data);
+        if (data) {
+
+            // // rewire entities
+            // data.gameWorld.entities.forEach((entity, index) => {
+            //     data.gameWorld.entities[index] = entities.restore(entity);
+            // });
+            // rewire debug
+            if (data.debug) {
+                var debugData = data.debug
+                data.debug = new debug();
+                data.debug.restore(debugData);
+            }
+           
+            this.render.update(data);
+        }
+        
         
         // Get new user inputs
         var inputs = this.userInput.getInputEvents();

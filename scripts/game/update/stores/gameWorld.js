@@ -3,19 +3,16 @@ var GameWorld = {
     score: 0,
     time: 0,
     level: 1,
-    entities: [],
+    entities: []
 };
 
 var proto = {
-    playerInput: null,
-    update(ticksPerSecond) {
+    update(update) {
         
-
         this.entities.forEach(entity => {
-            entity.update(ticksPerSecond);
+            entity.update(update);
         });
 
-        
     },
     addEntity(entity) {
         this.entities.push(entity);

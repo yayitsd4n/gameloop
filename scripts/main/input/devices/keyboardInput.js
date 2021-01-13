@@ -15,14 +15,13 @@ class KeyboardInput {
 
     addKeyEvent(key) {
         if (key.repeat) return;
-
-        var keyEvent = {
+        
+        this.keyEvents.push({
             key: key.key,
-            keyCode: key.keyCode,
-            eventType: key.type
-        };
-
-        this.keyEvents.push(keyEvent);
+            eventType: key.type,
+            timeStamp: key.timeStamp,
+            device: 'keyboard'
+        });
     }
 
     getInputEvents() {

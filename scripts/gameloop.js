@@ -1,17 +1,15 @@
 import { main } from './main/main.js';
-import { Render } from './main/render.js';
-import { UserInput } from './main/userInput.js';
+import { render } from './main/render.js';
 
+import { UserInput } from './main/input/userInput.js';
+import { KeyboardInput } from './main/input/devices/keyboardInput.js';
+import { MouseInput } from './main/input/devices/mouseInput.js';
 
-import { GameRender } from './game/render/gameRender.js';
-import { DebugRender } from './game/render/debugRender.js';
-import { KeyboardInput } from './game/input/keyboardInput.js';
 
 const update = new Worker('./scripts/main/update.js', {type: 'module'});
-const userInput = new UserInput(new KeyboardInput);
-const render = new Render({
-    gameWorld: new GameRender,
-    debug: new DebugRender
+const userInput = new UserInput({
+    keyboard: new KeyboardInput,
+    // mouse: new MouseInput
 });
 
 main.init(userInput, update, render);

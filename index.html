@@ -2,9 +2,36 @@
 <html>
     <head>
         <title>Game Loop</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body, html {
+                margin: 0;
+                padding: 0;
+            }
+
+            #game {
+                display: block;
+                width: 320px;
+                height: 240px;
+                background: #f2f2f2;
+            }
+
+            #debug {
+                display: block;
+                position: absolute;
+                top: 0;
+                right: 0;
+                height: 100%;
+                width: 250px;
+                background: #000;
+            }
+        </style>
     </head>
     <body>
-        <canvis id="canvas"></canvis>
+        <canvis id="game"></canvis>
+        <canvis id="debug"></canvis>
         <script src="scripts/gameloop.js" type="module"></script>
     </body>
 </html>

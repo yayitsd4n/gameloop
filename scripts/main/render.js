@@ -1,45 +1,38 @@
-var debugProto = {
-    add(key, value) {
-        this[key] = value;
+import { GameRender } from '../game/render/gameRender.js';
+import { debugRender } from '../game/render/debugRender.js';
+
+var render = {
+    running: false,
+    stores: {
+        gameWorld: null,
+        debug: null
     }
-}
-var debug = Object.create(null);
-Object.setPrototypeOf(debug, debugProto);
-//Object.freeze(debug);
+};
 
-debug.add('test', Math.floor(Math.random() * 100));
+var renderProto = {
+    update({gameWorld, debug}) {
+        this.stores.gameWorld = gameWorld;
+        if (debug) this.stores.debug = debug;
+    },
 
-class Render {
-    constructor (renderers) {
-        this.renderers = renderers,
-        this.running = false,
-        this.debug = {}
-    }
+    render() {
+        if (this.stores.debug) {
+            debugRender.data = this.stores.debug;
+            debugRender.update();
+        }
 
-    update(stores, debug) {
-
-        if (! this.running) return;
-        /*for (var renderer in this.renderers) {
-            if (renderer in stores) {
-                this.renderers[renderer].update(stores[renderer]);
-            }
-        }*/
-    }
+        this.running = window.requestAnimationFrame(this.render.bind(this));
+    },
 
     start() {
-        this.running = true;
-        for (var renderer in this.renderers) {
-            this.renderers[renderer].start();
-        }
-    }
+        this.running = window.requestAnimationFrame(this.render.bind(this));
+    },
 
-    pause() {
-        this.running = false;
+    stop() {
+        window.cancelAnimationFrame(this.running);
     }
+};
 
-    play() {
-        this.running = true;
-    }
-}
+Object.setPrototypeOf(render, renderProto);
 
-export { Render };
+export { render };
