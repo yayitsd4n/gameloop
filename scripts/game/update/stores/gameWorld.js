@@ -1,3 +1,6 @@
+import { entities } from '../../../shared/entities/entities.js'
+
+
 var GameWorld = {
     world: new Array(400).fill('.'),
     score: 0,
@@ -7,11 +10,19 @@ var GameWorld = {
 };
 
 var proto = {
-    update(update) {
+    init() {
         
-        this.entities.forEach(entity => {
-            entity.update(update);
-        });
+    },
+    update(update) {
+        var gameWorld = this;
+
+        for (var i = 0; i < this.entities.length; i++) {
+            var entity = this.entities[i];
+            
+            entity.udpate();
+
+            if (entity.exclusive) break;
+        }
 
     },
     addEntity(entity) {

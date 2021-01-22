@@ -1,23 +1,21 @@
-import { GameRender } from '../game/render/gameRender.js';
+//import { GameRender } from '../game/render/gameRender.js';
 import { debugRender } from '../game/render/debugRender.js';
 
 var render = {
     running: false,
-    stores: {
-        gameWorld: null,
-        debug: null
-    }
+    spaces: null,
+    debug: null
 };
 
 var renderProto = {
-    update({gameWorld, debug}) {
-        this.stores.gameWorld = gameWorld;
-        if (debug) this.stores.debug = debug;
+    update({spaces, debug}) {
+        this.spaces = spaces;
+        if (debug) this.debug = debug;
     },
 
     render() {
-        if (this.stores.debug) {
-            debugRender.data = this.stores.debug;
+        if (this.debug) {
+            debugRender.data = this.debug;
             debugRender.update();
         }
 

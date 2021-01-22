@@ -1,52 +1,20 @@
-import { update as updateExt } from '../game/update/update.js';
-
+import { updateExt } from '../game/update/update.js';
+import { Spaces } from '../shared/spaces/spaces.js';
+import { Debug } from '../shared/debug.js';
+import { ServiceLocator } from '../shared/serviceLocator.js';
+import { UserInput } from './input/userInput.js';
 import { commands } from './input/commands.js';
 import { bindings } from './input/keyBindings.js';
 
-import { debug } from '../shared/debug.js';
 
-/*
-    Inputs can have different bindings and commands depending on the context
-        * General gameplay
-        * Menus
-        * Interacting with objects
-        * Dialogue choice
-        * etc
-    
-    Input combinations can also generate commands (buffered input)
-    Holding an input down can generate a command
-    The current state of a thing can change what commands are available
-    
-    import playerStates;
+var spaces = new Spaces();
+var userInput = new UserInput();
+var debug = new Debug();
 
-    Player {
-        x,
-        y,
-        state: playerStates.ducking,
-        inputHandler = new InputHandler(),
-        update() {
-            var inputsThisFrame = this.inputHandler.getInputs();
-            state.update();
-        }
-    }
-
-    Main listens for events and passes them to update as raw inputs
-    Update has an inputhandler to catch global events
-        * Open menu
-        * Debug?
-    Entities can have an inputhandler (usually only one does)
-        * Main gameplay control
-    Inputhandler
-        * Performs binding between game default controls and user config
-        * Consumes the raw input if it's in the bindings. Leaves it if it's not.
-        * Returns default key binding or null
-    Entites
-        * Have state.
-            * Track how long they've been in a state (replaces active keys)
-
-    
-
-*/
+var serviceLocator = new ServiceLocator();
+serviceLocator.register('spaces', spaces);
+serviceLocator.register('userInput', userInput);
+serviceLocator.register('debug', debug);
 
 var updateMessages = {
     init() {
@@ -54,7 +22,7 @@ var updateMessages = {
         postMessage(['initalized']);
     },
     updateUserInput(data) {
-        this.playerInputs.set(data);
+        userInput.set(data);
     },
     run() {
         this.running = true;
@@ -71,42 +39,14 @@ onmessage = e => {
     }
 };
 
+
 var updateProps = {
-    stores: {},
     time: {
         currentTimeMS: null,
         lastTimeMS: null,
         elapsedMS: null,
         lag: 0,
         ticksPerSecond: 1000 / 120
-    },
-    playerInputs: {
-        inputs: [],
-        get(bindings) {
-            if (! this.inputs) return;
-
-            if (!bindings) {
-                return this.inputs.splice(0);
-            }
-
-            var inputs;
-            for (var device in bindings) {
-                inputs = 
-                    this.inputs.filter(input => {
-                        return input.device == device;
-                    }).filter(input => {
-                        return input.key in bindings[device];
-                    });
-            };
-
-            return inputs.sort((a,b) => a.timeStamp - b.timeStamp);
-        },
-        set(inputs) {
-            this.inputs = inputs;
-        },
-        clear() {
-            this.inputs.length = 0;
-        }
     },
     running: false,
     debug: {
@@ -120,10 +60,11 @@ var updateProps = {
 var update = {
     init() {
         // Call shadowed init methods. Works, but feels like a hack.
+        // I should refactor this since there's only going to be one thing to init
         var proto = Object.getPrototypeOf(update);
         while (proto) {
             if ('init' in proto) {
-                proto.init.call(this);
+                proto.init.call(this, serviceLocator);
             }
 
             proto = Object.getPrototypeOf(proto);
@@ -134,7 +75,7 @@ var update = {
         var proto = Object.getPrototypeOf(update);
         while (proto) {
             if ('update' in proto) {
-                proto.update.call(this);
+                proto.update.call(this, serviceLocator);
             }
 
             proto = Object.getPrototypeOf(proto);
@@ -146,7 +87,7 @@ var update = {
 
         this.updateLoop = setInterval(() => {
 
-            var inputs = this.playerInputs.get(bindings);
+            var inputs = userInput.get(bindings);
             
             inputs.filter(input => input.eventType == 'keydown').forEach(input => {
                 var command = bindings[input.device][input.key];
@@ -173,7 +114,7 @@ var update = {
                 this.debugFrame();
             }
             
-            this.playerInputs.clear();
+            userInput.clear();
         });
     },
 
@@ -182,7 +123,7 @@ var update = {
             switch(Math.sign(this.debug.position)) {
                 case -1:
                 case 0:
-                    postMessage(['updateFrameEnd', this.debug.history[this.debug.history.length + this.debug.position]]);
+                    this.frameEnd(this.debug.history[this.debug.history.length + this.debug.position]);
                     this.debug.running = false;
                 break;
     
@@ -194,21 +135,20 @@ var update = {
                 break;  
             }
         } else {
-            postMessage(['updateFrameEnd']);
+            this.frameEnd()
         }
         
     },
 
     simulateFrame() {
         while (this.time.lag >= this.time.ticksPerSecond) {
-            this.stores.debug = new debug();
 
             this.update(this.time.ticksPerSecond);
             this.time.lag -= this.time.ticksPerSecond;
 
-            this.debug.history.push(JSON.parse(JSON.stringify(this.stores)));
+            this.debug.history.push(JSON.parse(JSON.stringify(spaces)));
             
-            postMessage(['updateFrameEnd', this.stores]);
+            this.frameEnd(spaces);
         }
     },
 
@@ -257,8 +197,15 @@ var update = {
         if (this.running) this.pause();
         if (! this.debug.running) this.debug.running = true;
         this.debug.position += frames;
+    },
+
+    frameEnd(updateData) {
+        postMessage(['updateFrameEnd', updateData || null]);
+        debug.clear();
     }
 };
 
 if (updateExt) Object.setPrototypeOf(update, updateExt);
+
+
 Object.setPrototypeOf(updateProps, update);

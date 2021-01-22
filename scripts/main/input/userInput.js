@@ -1,23 +1,35 @@
 class UserInput {
-    constructor(inputDevices) {
-        this.inputDevices = inputDevices;
+    constructor() {
+        this.inputs = []
     }
 
-    init() {
-        for (var inputDevice in this.inputDevices) {
-            this.inputDevices[inputDevice].init();
-        }
-    }
+    get(bindings) {
+        if (! this.inputs) return;
 
-    getInputEvents() {
-
-        var inputEvents = [];
-        for (var inputDevice in this.inputDevices) {
-            inputEvents = inputEvents.concat(this.inputDevices[inputDevice].getInputEvents());
+        if (!bindings) {
+            return this.inputs.splice(0);
         }
 
-        return inputEvents.sort((a,b) => a.timeStamp - b.timeStamp);
+        var inputs;
+        for (var device in bindings) {
+            inputs = 
+                this.inputs.filter(input => {
+                    return input.device == device;
+                }).filter(input => {
+                    return input.key in bindings[device];
+                });
+        };
+
+        return inputs.sort((a,b) => a.timeStamp - b.timeStamp);
     }
-}
+
+    set(inputs) {
+        this.inputs = inputs;
+    }
+
+    clear() {
+        this.inputs.length = 0;
+    }
+};
 
 export { UserInput };

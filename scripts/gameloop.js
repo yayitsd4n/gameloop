@@ -1,13 +1,13 @@
 import { main } from './main/main.js';
 import { render } from './main/render.js';
 
-import { UserInput } from './main/input/userInput.js';
+import { UserInputRecorder } from './main/input/userInputRecorder.js';
 import { KeyboardInput } from './main/input/devices/keyboardInput.js';
 import { MouseInput } from './main/input/devices/mouseInput.js';
 
 
 const update = new Worker('./scripts/main/update.js', {type: 'module'});
-const userInput = new UserInput({
+const userInput = new UserInputRecorder({
     keyboard: new KeyboardInput,
     // mouse: new MouseInput
 });

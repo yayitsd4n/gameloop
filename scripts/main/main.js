@@ -1,5 +1,6 @@
-import { entities } from '../shared/entities/entities.js';
-import { debug } from '../shared/debug.js';
+import { entityFactory } from '../shared/entities/entityFactory.js';
+import { spacesFactory } from '../shared/spaces/spacesFactory.js';
+import { Debug } from '../shared/debug.js';
 
 const noop = function(){};
 
@@ -17,11 +18,11 @@ var messages = {
             //     data.gameWorld.entities[index] = entities.restore(entity);
             // });
             // rewire debug
-            if (data.debug) {
-                var debugData = data.debug
-                data.debug = new debug();
-                data.debug.restore(debugData);
-            }
+            // if (data.debug) {
+            //     var debugData = data.debug
+            //     data.debug = new Debug();
+            //     data.debug.restore(debugData);
+            // }
            
             this.render.update(data);
         }
