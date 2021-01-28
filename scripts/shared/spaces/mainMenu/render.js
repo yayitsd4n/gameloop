@@ -1,0 +1,6 @@
+
+var render = {
+
+};
+
+export { render };

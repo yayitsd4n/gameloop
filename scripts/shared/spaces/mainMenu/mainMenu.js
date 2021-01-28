@@ -1,6 +1,7 @@
 import { entityFactory } from '../../entities/entityFactory.js';
 import { inputHandler } from './inputHandler.js';
 import { update } from './update.js';
+import { render } from './render.js';
 
 
 class mainMenu {
@@ -9,7 +10,14 @@ class mainMenu {
             ['play'],
             ['controls']
         ];
-        this.entities = [
+        this.entities = [];
+        this.inputHandler = inputHandler;
+        this.exclusive = true;
+        this.fullscreen = true;
+    }
+
+    init() {
+        this.entities.push(
             entityFactory.create('menuButton', {
                 text: 'Play',
                 id: 'play',
@@ -26,10 +34,7 @@ class mainMenu {
                 },
                 selected: false
             })
-        ];
-        this.inputHandler = inputHandler;
-        this.exclusive = true;
-        this.fullscreen = true;
+        );
     }
 
     update(serviceLocator) {

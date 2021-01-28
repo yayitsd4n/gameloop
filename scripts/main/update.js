@@ -1,6 +1,6 @@
 import { updateExt } from '../game/update/update.js';
 import { Spaces } from '../shared/spaces/spaces.js';
-import { Debug } from '../shared/debug.js';
+import { Debug } from '../shared/debug/debug.js';
 import { ServiceLocator } from '../shared/serviceLocator.js';
 import { UserInput } from './input/userInput.js';
 import { commands } from './input/commands.js';
@@ -46,11 +46,10 @@ var updateProps = {
         lastTimeMS: null,
         elapsedMS: null,
         lag: 0,
-        ticksPerSecond: 1000 / 120
+        ticksPerSecond: 1000 / 60
     },
     running: false,
-    debug: {
-        history: [],
+    debugMode: {
         position: 0,
         running: false,
         on: false
@@ -93,7 +92,7 @@ var update = {
                 var command = bindings[input.device][input.key];
                 
                 if (command != 'toggleDebug') {
-                    if (this.debug.on == true) {
+                    if (this.debugMode.on == true) {
                         commands[command](this);
                     }
                 } else {
@@ -119,23 +118,28 @@ var update = {
     },
 
     debugFrame() {
-        if (this.debug.running) {
-            switch(Math.sign(this.debug.position)) {
+        if (this.debugMode.running) {
+            switch(Math.sign(this.debugMode.position)) {
                 case -1:
                 case 0:
-                    this.frameEnd(this.debug.history[this.debug.history.length + this.debug.position]);
-                    this.debug.running = false;
+                    //this.frameEnd(this.debugMode.history[this.debugMode.history.length + this.debugMode.position]);
+                    this.frameEnd(
+                        spaces.history[spaces.history.length + this.debugMode.position - 1],
+                        debug.history[debug.history.length + this.debugMode.position - 1]
+                    );
+
+                    this.debugMode.running = false;
                 break;
     
                 case 1:
-                    this.time.lag += this.time.ticksPerSecond * this.debug.position;
+                    this.time.lag += this.time.ticksPerSecond * this.debugMode.position;
                     this.simulateFrame();
-                    this.debug.position = 0;
-                    this.debug.running = false;
+                    this.debugMode.position = 0;
+                    this.debugMode.running = false;
                 break;  
             }
         } else {
-            this.frameEnd()
+            this.frameEnd();
         }
         
     },
@@ -146,15 +150,21 @@ var update = {
             this.update(this.time.ticksPerSecond);
             this.time.lag -= this.time.ticksPerSecond;
 
-            this.debug.history.push(JSON.parse(JSON.stringify(spaces)));
+            spaces.history.push(JSON.parse(JSON.stringify(spaces.current)));
+            debug.history.push(JSON.parse(JSON.stringify(debug.current)));
             
-            this.frameEnd(spaces);
+            this.frameEnd(
+                spaces.current,
+                debug.current
+            );
         }
     },
 
     toggleDebug() {
-        this.debug.on = !this.debug.on;
-        console.log(`Debug is ${this.debug.on}`);
+        this.debugMode.on = !this.debugMode.on;
+        postMessage(['toggleDebugRender', this.debugMode.on]);
+
+        console.log(`Debug is ${this.debugMode.on}`);
     },
 
     togglePlay() {
@@ -178,10 +188,12 @@ var update = {
     },
 
     play() {
-        if (this.debug.position != 0) {
-            this.debug.history = this.debug.history .slice(0, this.debug.history .length - this.debug.position);
-            this.debug.position = 0;
-            this.debug.running = false;
+        if (this.debugMode.position != 0) {
+            spaces.history = spaces.history.slice(0, spaces.history.length - this.debugMode.position);
+            debug.history = debug.history.slice(0, debug.history.length - this.debugMode.position);
+   
+            this.debugMode.position = 0;
+            this.debugMode.running = false;
         }
         
         this.running = true;
@@ -189,18 +201,21 @@ var update = {
 
     backward(frames = 1) {
         if (this.running) this.pause();
-        if (! this.debug.running) this.debug.running = true;
-        this.debug.position -= frames;
+        if (! this.debugMode.running) this.debugMode.running = true;
+        this.debugMode.position -= frames;
     },
 
     forward(frames = 1) {
         if (this.running) this.pause();
-        if (! this.debug.running) this.debug.running = true;
-        this.debug.position += frames;
+        if (! this.debugMode.running) this.debugMode.running = true;
+        this.debugMode.position += frames;
     },
 
-    frameEnd(updateData) {
-        postMessage(['updateFrameEnd', updateData || null]);
+    frameEnd(currentSpaces, currentDebug) {
+        postMessage(['updateFrameEnd', {
+            spacesData: currentSpaces,
+            debugData: currentDebug
+        }]);
         debug.clear();
     }
 };

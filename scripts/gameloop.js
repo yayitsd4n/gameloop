@@ -3,7 +3,6 @@ import { render } from './main/render.js';
 
 import { UserInputRecorder } from './main/input/userInputRecorder.js';
 import { KeyboardInput } from './main/input/devices/keyboardInput.js';
-import { MouseInput } from './main/input/devices/mouseInput.js';
 
 
 const update = new Worker('./scripts/main/update.js', {type: 'module'});

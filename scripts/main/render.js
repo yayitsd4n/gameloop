@@ -1,25 +1,38 @@
-//import { GameRender } from '../game/render/gameRender.js';
-import { debugRender } from '../game/render/debugRender.js';
-
 var render = {
     running: false,
-    spaces: null,
-    debug: null
+    debug: false,
+    views: {
+        spaces: null,
+        debug: null
+    }
 };
 
 var renderProto = {
-    update({spaces, debug}) {
-        this.spaces = spaces;
-        if (debug) this.debug = debug;
+    update({spacesData, debugData}) {
+        if (spacesData) {
+            this.views.spaces = spacesData;
+        }
+        if (debugData) {
+            this.views.debug = debugData;
+        }
     },
 
     render() {
         if (this.debug) {
-            debugRender.data = this.debug;
-            debugRender.update();
+            this.views.debug.render();
         }
-
+        
         this.running = window.requestAnimationFrame(this.render.bind(this));
+    },
+
+    toggleDebug() {
+        this.debug = !this.debug;
+
+        if (this.debug) {
+            this.views.debug.createView();
+        } else {
+            this.views.debug.removeView();
+        }
     },
 
     start() {

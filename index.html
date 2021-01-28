@@ -9,33 +9,21 @@
             body, html {
                 margin: 0;
                 padding: 0;
-            }
-
-            #game {
-                display: block;
-                width: 320px;
-                height: 240px;
-                background: #f2f2f2;
-            }
-
-            #debug {
-                display: block;
-                position: absolute;
-                top: 0;
-                right: 0;
                 height: 100%;
-                width: 250px;
-                background: #000;
+            }
+
+            #root {
+                height: 100%;
             }
         </style>
     </head>
     <body>
-        <div class="game">
-            <div class="ui"></div>
-            <canvis id="canvas"></canvis>
+        <div id="root">
+            <canvis id="game"></canvis>
         </div>
+
         
-        <canvis id="debug"></canvis>
+        
         <script src="scripts/gameloop.js" type="module"></script>
     </body>
 </html>

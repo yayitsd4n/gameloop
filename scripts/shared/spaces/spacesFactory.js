@@ -16,15 +16,6 @@ var spacesFactoryFns = {
         }
 
         return spaces;
-    },
-    restore(space) {
-        var spaces = new this[space.restore]();
-
-        for (var prop in space) {
-            spaces[prop] = space[prop];
-        }
-
-        return spaces;
     }
 };
 
