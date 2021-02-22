@@ -1,49 +1,38 @@
+import { DebugInstance } from '../debug/debugInstance';
+import { spacesFactory } from '../spaces/spacesFactory.js';
+
 var render = {
-    running: false,
-    debug: false,
-    views: {
-        spaces: null,
-        debug: null
-    }
+    workerLink: null,
 };
 
+
 var renderProto = {
-    update({spacesData, debugData}) {
-        if (spacesData) {
-            this.views.spaces = spacesData;
-        }
-        if (debugData) {
-            this.views.debug = debugData;
-        }
+    init(workerLink) {
+        this.workerLink = workerLink;
     },
 
     render() {
-        if (this.debug) {
-            this.views.debug.render();
-        }
         
-        this.running = window.requestAnimationFrame(this.render.bind(this));
-    },
+        this.workerLink.callLinked('getUpdateFrame').then(({spaces, debug, lag}) => {
+            debug = new DebugInstance(debug);
+            if (spaces) {
+                spaces.forEach((space, index) => {
+                    spaces[index] = spacesFactory.create(space.type, space);
+                });
+            };
+            
 
-    toggleDebug() {
-        this.debug = !this.debug;
+            this.running = window.requestAnimationFrame(this.render.bind(this));  
+        });
 
-        if (this.debug) {
-            this.views.debug.createView();
-        } else {
-            this.views.debug.removeView();
-        }
+              
     },
 
     start() {
         this.running = window.requestAnimationFrame(this.render.bind(this));
-    },
-
-    stop() {
-        window.cancelAnimationFrame(this.running);
     }
 };
 
 Object.setPrototypeOf(render, renderProto);
 
-export { render };
+export default render;

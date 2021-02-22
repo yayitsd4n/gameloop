@@ -1,66 +1,40 @@
-import { updateExt } from '../game/update/update.js';
-import { Spaces } from '../shared/spaces/spaces.js';
-import { Debug } from '../shared/debug/debug.js';
-import { ServiceLocator } from '../shared/serviceLocator.js';
-import { UserInput } from './input/userInput.js';
-import { commands } from './input/commands.js';
-import { bindings } from './input/keyBindings.js';
+import { updateExt } from '../ext/update';
+import { Spaces } from '../spaces/spaces';
+import { Debug } from '../debug/debug';
+import { ServiceLocator } from '../misc/serviceLocator';
+import { UserInput } from './input/userInput';
+import { default as workerLink } from '../misc/workerLink';
 
 
 var spaces = new Spaces();
 var userInput = new UserInput();
 var debug = new Debug();
+workerLink.init();
 
 var serviceLocator = new ServiceLocator();
-serviceLocator.register('spaces', spaces);
+serviceLocator.register('workerLink', workerLink);
 serviceLocator.register('userInput', userInput);
+serviceLocator.register('spaces', spaces);
 serviceLocator.register('debug', debug);
 
-var updateMessages = {
-    init() {
-        this.init();
-        postMessage(['initalized']);
-    },
-    updateUserInput(data) {
-        userInput.set(data);
-    },
-    run() {
-        this.running = true;
-        this.run();
-    }
-};
-
-onmessage = e => {
-    var message = e.data[0];
-    var data = e.data[1];
-
-    if (message in updateMessages) {
-        updateMessages[message].call(updateProps, data);
-    }
-};
 
 
-var updateProps = {
+var update = {
     time: {
+        running: false,
         currentTimeMS: null,
         lastTimeMS: null,
         elapsedMS: null,
         lag: 0,
-        ticksPerSecond: 1000 / 60
-    },
-    running: false,
-    debugMode: {
-        position: 0,
-        running: false,
-        on: false
+        ticksPerSecond: 1000 / 120,
+        position: 0
     }
 };
 
-var update = {
+var updateFns = {
     init() {
         // Call shadowed init methods. Works, but feels like a hack.
-        // I should refactor this since there's only going to be one thing to init
-        var proto = Object.getPrototypeOf(update);
+        var proto = Object.getPrototypeOf(updateFns);
         while (proto) {
             if ('init' in proto) {
                 proto.init.call(this, serviceLocator);
@@ -68,10 +42,12 @@ var update = {
 
             proto = Object.getPrototypeOf(proto);
         }
+
+        return 'init';
     },
 
-    update(ticksPerSecond) {
-        var proto = Object.getPrototypeOf(update);
+    update() {
+        var proto = Object.getPrototypeOf(updateFns);
         while (proto) {
             if ('update' in proto) {
                 proto.update.call(this, serviceLocator);
@@ -81,146 +57,59 @@ var update = {
         }
     },
 
-    run() {
-        this.running = true;
+    start() {
+        this.time.running = true;
+        console.log('update running');
 
         this.updateLoop = setInterval(() => {
 
-            var inputs = userInput.get(bindings);
-            
-            inputs.filter(input => input.eventType == 'keydown').forEach(input => {
-                var command = bindings[input.device][input.key];
-                
-                if (command != 'toggleDebug') {
-                    if (this.debugMode.on == true) {
-                        commands[command](this);
-                    }
-                } else {
-                    commands[command](this);
-                }
-            });
-            
+            if (this.time.lastTimeMS === null) this.time.lastTimeMS = performance.now();
+            this.time.currentTimeMS = performance.now();
+            this.time.elapsedMS = this.time.currentTimeMS - this.time.lastTimeMS;
+            this.time.lastTimeMS = this.time.currentTimeMS;
+            this.time.lag += this.time.elapsedMS;
 
-            if (this.running) {
-                if (this.time.lastTimeMS === null) this.time.lastTimeMS = performance.now();
-                this.time.currentTimeMS = performance.now();
-                this.time.elapsedMS = this.time.currentTimeMS - this.time.lastTimeMS;
-                this.time.lastTimeMS = this.time.currentTimeMS;
-                this.time.lag += this.time.elapsedMS;
-
-                this.simulateFrame();
-            } else {
-                this.debugFrame();
-            }
-            
-            userInput.clear();
+            this.simulateFrame();
         });
-    },
-
-    debugFrame() {
-        if (this.debugMode.running) {
-            switch(Math.sign(this.debugMode.position)) {
-                case -1:
-                case 0:
-                    //this.frameEnd(this.debugMode.history[this.debugMode.history.length + this.debugMode.position]);
-                    this.frameEnd(
-                        spaces.history[spaces.history.length + this.debugMode.position - 1],
-                        debug.history[debug.history.length + this.debugMode.position - 1]
-                    );
-
-                    this.debugMode.running = false;
-                break;
-    
-                case 1:
-                    this.time.lag += this.time.ticksPerSecond * this.debugMode.position;
-                    this.simulateFrame();
-                    this.debugMode.position = 0;
-                    this.debugMode.running = false;
-                break;  
-            }
-        } else {
-            this.frameEnd();
-        }
-        
     },
 
     simulateFrame() {
         while (this.time.lag >= this.time.ticksPerSecond) {
+            if (this.time.position > 1) {
+                while (this.time.position) {
+                    this.update(this.time.ticksPerSecond);
 
-            this.update(this.time.ticksPerSecond);
-            this.time.lag -= this.time.ticksPerSecond;
-
-            spaces.history.push(JSON.parse(JSON.stringify(spaces.current)));
-            debug.history.push(JSON.parse(JSON.stringify(debug.current)));
-            
-            this.frameEnd(
-                spaces.current,
-                debug.current
-            );
-        }
-    },
-
-    toggleDebug() {
-        this.debugMode.on = !this.debugMode.on;
-        postMessage(['toggleDebugRender', this.debugMode.on]);
-
-        console.log(`Debug is ${this.debugMode.on}`);
-    },
-
-    togglePlay() {
-        if (this.running == true) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    },
-
-    pause() {
-        this.running = false;
-
-        if (this.time.currentTimeMS) {
-            for (var prop in this.time) {
-                if (prop != 'ticksPerSecond') {
-                    this.time[prop] = null;
+                    console.log('debug forward');
+                    this.time.position--;
                 }
+
+                this.time.currentTimeMS = null;
+                this.time.lastTimeMS = null;
+                this.time.elapsedMS = null;
+                this.time.lag = null;
+            }
+
+            if (this.time.position <= 0) {
+                this.update(this.time.ticksPerSecond);
+                this.time.lag -= this.time.ticksPerSecond;
             }
         }
     },
 
-    play() {
-        if (this.debugMode.position != 0) {
-            spaces.history = spaces.history.slice(0, spaces.history.length - this.debugMode.position);
-            debug.history = debug.history.slice(0, debug.history.length - this.debugMode.position);
-   
-            this.debugMode.position = 0;
-            this.debugMode.running = false;
-        }
-        
-        this.running = true;
-    },
-
-    backward(frames = 1) {
-        if (this.running) this.pause();
-        if (! this.debugMode.running) this.debugMode.running = true;
-        this.debugMode.position -= frames;
-    },
-
-    forward(frames = 1) {
-        if (this.running) this.pause();
-        if (! this.debugMode.running) this.debugMode.running = true;
-        this.debugMode.position += frames;
-    },
-
-    frameEnd(currentSpaces, currentDebug) {
-        postMessage(['updateFrameEnd', {
-            spacesData: currentSpaces,
-            debugData: currentDebug
-        }]);
-        debug.clear();
+    getUpdateFrame() {
+        return {
+            spaces: spaces.get(this.time.position),
+            debug: debug.get(this.time.position),
+            lag: this.time.lag / this.time.ticksPerSecond
+        };
     }
 };
 
-if (updateExt) Object.setPrototypeOf(update, updateExt);
+if (updateExt) Object.setPrototypeOf(updateFns, updateExt);
 
 
-Object.setPrototypeOf(updateProps, update);
+Object.setPrototypeOf(update, updateFns); 
+
+workerLink.register('initUpdate', update.init.bind(update));
+workerLink.register('startUpdate', update.start.bind(update));
+workerLink.register('getUpdateFrame', update.getUpdateFrame.bind(update));

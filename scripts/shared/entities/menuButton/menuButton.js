@@ -1,5 +1,0 @@
-class menuButton {
-
-};
-
-export { menuButton };

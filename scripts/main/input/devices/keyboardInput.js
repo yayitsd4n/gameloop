@@ -29,4 +29,5 @@ class KeyboardInput {
     }
 }
 
-export { KeyboardInput };
+
+export default new KeyboardInput();
