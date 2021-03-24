@@ -7,19 +7,10 @@ var entityFactory = {
 var entityFactoryFns = {
     create(name, options) {
         var entity = new this[name]();
-        entity.restore = name;
+        entity.type = name;
 
         for (var prop in options) {
             entity[prop] = options[prop];
-        }
-
-        return entity;
-    },
-    restore(entityObj) {
-        var entity = new this[entityObj.restore]();
-
-        for (var prop in entityObj) {
-            entity[prop] = entityObj[prop];
         }
 
         return entity;

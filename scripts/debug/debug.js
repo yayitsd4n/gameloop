@@ -1,5 +1,5 @@
 import { DebugInstance } from './debugInstance.js';
-import { bindings } from './keyBindings.js';
+import { bindings } from './input/keyBindings.js';
 
 class Debug {
     constructor() {
@@ -19,23 +19,22 @@ class Debug {
     
         inputs.filter(input => input.eventType == 'keydown').forEach(input => {
             var command = bindings[input.device][input.key];
-            
-            if (command == 'toggleDebug') {
-                this.state.visible = !this.state.visible;
-            }
 
-            if (command == 'togglePlay') {
-                time.position = 0;
-                time.running = !time.running;
-            }
-
-            if (command == 'forward') {
-                time.running = false;
-                time.position += this.state.forward;
-            }
-
-            if (command == 'backward') {
-                time.position -= this.state.backward;
+            switch(command) {
+                case 'toggleDebug':
+                    this.state.visible = !this.state.visible;
+                break;
+                case 'togglePlay':
+                    time.position = 0;
+                    time.running = !time.running;
+                break;
+                case 'forward':
+                    time.running = false;
+                    time.position += this.state.forward;
+                break;
+                case 'backward':
+                    time.position -= this.state.backward;
+                break;
             }
         });
 

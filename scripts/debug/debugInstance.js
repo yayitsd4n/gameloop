@@ -1,3 +1,5 @@
+import { render } from './render';
+
 class DebugInstance {
     constructor(data) {
         for (var key in data) {
@@ -12,9 +14,9 @@ class DebugInstance {
         this[section].push(data);
     }
 
-    // render(debugState) {
-    //     render.update(this, debugState);
-    // }
+    render() {
+        render.update(this);
+    }
 
     // createView() {
     //     render.createView();

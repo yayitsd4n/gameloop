@@ -15,13 +15,20 @@ class Spaces {
         return space;
     }
 
-    update() {
-        //this.history.push(Object.assign({}, this.current));
-        this.history.push(this.current.slice(0));
+    update(lag) {
+        this.saveToHistory();
 
         for (var i = 0; i < this.current.length; i++) {
             var space = this.current[i];
-            space.update();
+            space.update(lag);
+        }
+    }
+
+    saveToHistory() {
+        if (this.history.length >= 120) {
+            this.history.splice(0, 1, this.current.splice(0));
+        } else {
+            this.history.push(this.current.slice(0));
         }
     }
 

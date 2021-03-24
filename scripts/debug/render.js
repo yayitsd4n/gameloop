@@ -75,11 +75,11 @@ var renderFns = {
         this.debugData.tree = newTree;
     },
     update(debugData) {
-        if (! this.state.on  && debugData.controls.on) {
+        if (! this.state.on  && debugData.state.visible) {
             this.createView();
         }
 
-        if (this.state.on  && !debugData.controls.on) {
+        if (this.state.on  && !debugData.state.visible) {
             this.removeView();
         }
         this.state = debugData.controls;
